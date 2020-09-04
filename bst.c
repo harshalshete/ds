@@ -1,12 +1,46 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
+#include<limits.h>
 
 typedef struct tnode {
     int val;
     struct tnode *l;
     struct tnode *r;
 } tnode_t;
+
+
+void inorder(tnode_t *n) {
+    if (n == NULL)
+        return;
+
+    inorder(n->l);
+    printf(" %d ", n->val);
+    inorder(n->r);
+}
+
+void inorder_k(tnode_t* root, int k, int *a) {
+    if (root == NULL)
+        return;
+
+    inorder_k(root->l, k, a);
+    a[0] = a[0] + 1;
+    if (a[0] == k) {
+        a[1] = root->val;
+    }
+
+    inorder_k(root->r, k, a);
+}
+
+int ksmallest(tnode_t *n, int k) {
+    int a[2];
+
+    memset(a, 0, sizeof(a));    
+    inorder_k(n, k, a);
+
+    printf("Kth(%d) element is %d\n", k, a[1]);
+    return (a[1]);
+}
 
 tnode_t *search_bst(int val, tnode_t **root) {
     tnode_t *node = *root;
@@ -90,9 +124,11 @@ struct node *head;
 void enqueue(tnode_t *n) {
     struct node *nw = NULL;
 
+#if 0
     if (!n) {
         return;
     }
+#endif
 
     nw = malloc(sizeof(struct node));
     if(!nw) {
@@ -100,7 +136,7 @@ void enqueue(tnode_t *n) {
         return;
     }
     memset(nw, 0, sizeof(*nw));
-    nw->v = n;    
+    nw->v = n;
 
     if (head == NULL) {
         head = nw;
@@ -141,7 +177,7 @@ void level_display(tnode_t **root) {
             enqueue(tmp->r);
     }
     printf("\n");
-}
+} 
 
 void delete(int val, tnode_t **root) {
     tnode_t *temp, *parent = NULL;
@@ -207,9 +243,91 @@ void delete(int val, tnode_t **root) {
     }
 }
 
+int isbst(tnode_t *root, int min, int max) {
+    tnode_t *node = root;
 
-int isbst(tnode_t **root) {
-    return (0);
+    if (node == NULL) {
+        return 1;
+    }
+
+    if (node->val < min || node->val > max)
+        return 0;
+
+    return isbst(node->l, min, node->val) &&
+        isbst(node->r, node->val, max);
+}
+
+/* 
+    We can maintain a counter and keep the total count,
+    or we can call this function which calculated in O(n)
+*/
+void total_nodes(tnode_t *root, int *a) {
+    if (!root)
+        return;
+    total_nodes(root->l, a);
+    *a = *a + 1;
+    total_nodes(root->r, a);
+}
+
+void leftsideview(tnode_t **root) {
+    tnode_t *tmp = NULL;
+    int cnt = 0;
+
+    tmp = *root;
+    enqueue(tmp);
+    tmp = NULL;
+    enqueue(tmp);
+    printf("\nLeft side view Tree: ");
+
+    while (tmp = dequeue()) {
+        printf("%d\t", tmp->val);
+        do {
+            if (tmp->l) {
+                // printf("%d\t", tmp->l->val);
+                enqueue(tmp->l);
+            }
+            if (tmp->r) {
+                // printf("%d\t", tmp->r->val);
+                enqueue(tmp->r);
+            }                
+        } while (tmp = dequeue());
+        cnt++;
+        tmp = NULL;
+        enqueue(tmp);
+        // printf("\n");
+    }
+    printf("\n");
+}
+
+
+void rightsideview(tnode_t **root) {
+    tnode_t *tmp = NULL;
+    tnode_t *print = NULL;
+    int cnt = 0;
+
+    tmp = *root;
+    enqueue(tmp);
+    tmp = NULL;
+    enqueue(tmp);
+    printf("\nRight side view Tree: ");
+
+    while (tmp = dequeue()) {
+        do {
+            if (tmp->l) {
+                // printf("%d\t", tmp->l->val);
+                enqueue(tmp->l);
+            }
+            if (tmp->r) {
+                // printf("%d\t", tmp->r->val);
+                enqueue(tmp->r);
+            }
+            print = tmp;
+        } while (tmp = dequeue());
+        cnt++;
+        enqueue(tmp);
+        printf("%d\t", print->val);
+    }
+    printf("\n");
 }
 
 int main() {
@@ -221,18 +339,42 @@ int main() {
     for (i=0; i < n; i++) {
         insert_bst(val[i], &root);
     }
-
+    leftsideview(&root);
+    rightsideview(&root);
+    printf("\n");
     if (search_bst(40, &root)) {
         printf("40 found\n");
     }
 
-    level_display(&root);
+    if (isbst(root, INT_MIN, INT_MAX)) {
+        printf("\n This Binary tree is indeed a binary search tree.\n");
+    } else {
+        printf("\n error: Tree is not a BST\n");
+    }
+    
+    i = 0;
+    total_nodes(root, &i);
+    printf("\nNumber of nodes in tree: %d\n", i);
 
+    level_display(&root);
+    printf("\nInorder : ");
+    inorder(root);
+    printf("\n");
+
+#if 0
     delete(80, &root);
+    printf("\n");
     level_display(&root);
 
     delete(60, &root);
+    printf("\n");
     level_display(&root);
-
+#endif
+    for (i=0; i < n; i++) {
+        delete(val[i], &root);
+    }
+    printf("\nInorder : ");
+    inorder(root);
+    printf("\n");
     return 0;
 }
